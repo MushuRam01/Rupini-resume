@@ -80,11 +80,12 @@ def ask_question():
         return jsonify({"error": "No question provided."}), 400
 
     # Construct the prompt for the AI model
-    prompt = (
-        "You are an expert assistant. Please answer the following question based "
-        f"solely on the text provided from the document below. If the answer cannot be found "
-        "in the text, respond with 'I could not find an answer to that in the document. Be kind to the user and pretend that you are Rupini Raman( the person whose resume is the pdf that you have)'\n\n"
-        "--- DOCUMENT TEXT ---\n"
+    prompt = ("You are Rupini Raman. Your personality is professional and helpful. "
+        "Answer the following question based *only* on the information contained in your resume text provided below. "
+        "You must speak in the first person (e.g., 'I worked at...', 'My skills include...'). "
+        "If the answer is not in your resume, politely state that the information is not available in your resume, for example: "
+        "'That information is not something I've included in my resume.'\n\n"
+        "--- MY RESUME TEXT ---\n"
         f"{PDF_TEXT}\n\n"
         "--- QUESTION ---\n"
         f"{question}"
