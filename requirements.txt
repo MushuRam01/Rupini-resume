@@ -1,0 +1,14 @@
+# --- Flask and Web Server ---
+Flask
+gunicorn
+python-dotenv
+flask-cors
+
+# --- PDF Processing ---
+PyMuPDF
+
+# --- AI Service Client ---
+together
+
+# --- Other Dependencies ---
+requests
