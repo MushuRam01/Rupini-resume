@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rupini Raman's AI</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        #chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-window::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background-color: #4b5563; /* gray-600 */
+            border-radius: 10px;
+            border: 2px solid #1f2937; /* gray-800 */
+        }
+        .chat-bubble {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: pop-in 0.3s forwards;
+        }
+        @keyframes pop-in {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex flex-col items-center justify-center h-screen p-4">
+
+    <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl h-full flex flex-col">
+        <!-- Header -->
+        <header class="bg-gray-700 p-4 rounded-t-2xl border-b border-gray-600">
+            <h1 class="text-xl font-bold text-center">Chat with Rupini Raman's AI</h1>
+            <p class="text-sm text-center text-gray-400">Ask questions about Rupini Raman</p>
+        </header>
+
+        <!-- Chat Window -->
+        <main id="chat-window" class="flex-1 p-6 overflow-y-auto space-y-6">
+            <!-- Initial AI message -->
+            <div class="flex items-start gap-3 justify-start chat-bubble">
+                <div class="bg-blue-600 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg rounded-tl-none max-w-md">
+                    <p>Hello! I have read the document. What would you like to know?</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Form -->
+        <footer class="p-4 border-t border-gray-600">
+            <form id="chat-form" class="flex items-center gap-3">
+                <input 
+                    type="text" 
+                    id="message-input" 
+                    placeholder="Type your question here..."
+                    class="flex-1 bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                    autocomplete="off">
+                <button 
+                    type="submit"
+                    id="send-button"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg transition duration-300 flex items-center">
+                    <span>Send</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        // --- Event Listener for Form Submission ---
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Display user's message
+            appendMessage(message, 'user');
+            messageInput.value = '';
+
+            // Show loading indicator and disable form
+            showLoadingIndicator();
+            toggleForm(false);
+
+            try {
+                // Send question to the backend API
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: message }),
+                });
+
+                // Remove loading indicator
+                removeLoadingIndicator();
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.answer || `HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                // Display AI's answer
+                appendMessage(data.answer, 'ai');
+
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage(`Sorry, something went wrong: ${error.message}`, 'ai', true);
+            } finally {
+                // Re-enable the form
+                toggleForm(true);
+            }
+        });
+
+        // --- Helper Functions ---
+
+        /**
+         * Appends a message to the chat window.
+         * @param {string} text - The message text.
+         * @param {string} sender - 'user' or 'ai'.
+         * @param {boolean} isError - Optional flag for styling error messages.
+         */
+        function appendMessage(text, sender, isError = false) {
+            const isUser = sender === 'user';
+            
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex items-start gap-3 chat-bubble ${isUser ? 'justify-end' : 'justify-start'}`;
+
+            const bubbleClass = isUser 
+                ? 'bg-gray-600 rounded-br-none' 
+                : (isError ? 'bg-red-500 rounded-bl-none' : 'bg-gray-700 rounded-bl-none');
+            
+            const iconHTML = isUser ? '' : `
+                <div class="bg-blue-600 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                </div>`;
+
+            const messageContent = `
+                <div class="p-4 rounded-lg max-w-md ${bubbleClass}">
+                    <p>${text.replace(/\n/g, '<br>')}</p> <!-- Replace newlines with <br> for proper rendering -->
+                </div>`;
+            
+            messageWrapper.innerHTML = isUser ? messageContent : iconHTML + messageContent;
+            
+            chatWindow.appendChild(messageWrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the latest message
+        }
+        
+        /**
+         * Shows a "thinking..." message from the AI.
+         */
+        function showLoadingIndicator() {
+            const loadingWrapper = document.createElement('div');
+            loadingWrapper.id = 'loading-indicator';
+            loadingWrapper.className = 'flex items-start gap-3 justify-start chat-bubble';
+            loadingWrapper.innerHTML = `
+                <div class="bg-blue-600 rounded-full p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg rounded-bl-none max-w-md">
+                    <p class="animate-pulse">Thinking...</p>
+                </div>
+            `;
+            chatWindow.appendChild(loadingWrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        /**
+         * Removes the loading indicator.
+         */
+        function removeLoadingIndicator() {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        /**
+         * Enables or disables the input form.
+         * @param {boolean} isEnabled - True to enable, false to disable.
+         */
+        function toggleForm(isEnabled) {
+            messageInput.disabled = !isEnabled;
+            sendButton.disabled = !isEnabled;
+            sendButton.classList.toggle('opacity-50', !isEnabled);
+            sendButton.classList.toggle('cursor-not-allowed', !isEnabled);
+        }
+    </script>
+</body>
+</html>

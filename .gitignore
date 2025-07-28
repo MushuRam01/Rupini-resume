@@ -1,0 +1,8 @@
+# --- Environment ---
+# Ignore the virtual environment folder
+venv/
+
+# --- Secrets ---
+# Ignore the environment variables file
+.env
+
